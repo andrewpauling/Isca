@@ -1,17 +1,19 @@
 import os
 from collections import defaultdict
-
+from pathlib import Path
 from isca.loghandler import log
 
-_module_directory = os.path.dirname(os.path.realpath(__file__))
+_module_directory = Path.resolve(__file__).parent
 
 try:
-    GFDL_BASE        = os.environ['GFDL_BASE']
-    GFDL_WORK        = os.environ['GFDL_WORK']
-    GFDL_DATA        = os.environ['GFDL_DATA']
+    GFDL_BASE = Path(os.environ["GFDL_BASE"])
+    GFDL_WORK = Path(os.environ["GFDL_WORK"])
+    GFDL_DATA = Path(os.environ["GFDL_DATA"])
 except Exception as e:
-    log.error('Environment variables GFDL_BASE, GFDL_WORK, GFDL_DATA must be set')
-    raise ValueError('Environment variables GFDL_BASE, GFDL_WORK, GFDL_DATA must be set')
+    log.error("Environment variables GFDL_BASE, GFDL_WORK, GFDL_DATA must be set")
+    raise ValueError(
+        "Environment variables GFDL_BASE, GFDL_WORK, GFDL_DATA must be set"
+    )
 
 # GFDL_ENV: The environment on which the model is being run.
 # Primarily, this determines which compilers and libraries are to be used
@@ -24,32 +26,39 @@ except Exception as e:
 # on a new computer with different compilers, a new environment script will
 # need to be developed and placed in this directory.
 try:
-    GFDL_ENV = os.environ['GFDL_ENV']
+    GFDL_ENV = os.environ["GFDL_ENV"]
 except:
     # if the user doesn't have the environment variable set, use the computer's
     # fully qualified domain name as GFDL_ENV
     import socket
+
     GFDL_ENV = socket.getfqdn()
-    log.warning('Environment variable GFDL_ENV not set, using "%s".' % GFDL_ENV)
+    log.warning(f'Environment variable GFDL_ENV not set, using "{GFDL_ENV}".')
+
 
 try:
-    GFDL_SOC = os.environ['GFDL_SOC']
+    GFDL_SOC = os.environ["GFDL_SOC"]
 except:
     # if the user doesn't have the SOC variable set, then use None
     GFDL_SOC = None
-    log.warning('Environment variable GFDL_SOC not set, but this is only required if using SocratesCodebase. Setting to '+str(GFDL_SOC))
+    log.warning(
+        f"Environment variable GFDL_SOC not set, but this is only required if using SocratesCodebase. Setting to {GFDL_SOC}"
+    )
+
 
 def get_env_file(env=GFDL_ENV):
-    filepath = os.path.join(GFDL_BASE, 'src', 'extra', 'env', env)
-    if os.path.exists(filepath):
+    filepath = GFDL_BASE.joinpath("src", "extra", "env", env)
+    if filepath.is_file():
         return filepath
     else:
-        log.error('Environment file %s not found' % filepath)
-        raise IOError('Environment file %s not found' % filepath)
+        log.error(f"Environment file {filepath} not found")
+        raise IOError(f"Environment file {filepath} not found")
+
 
 class EventEmitter(object):
     """A very simple event driven object to make it easier
     to tie custom functionality into the model."""
+
     def __init__(self):
         self._events = defaultdict(list)
 
@@ -64,14 +73,15 @@ class EventEmitter(object):
             def fn(*args):
                 pass
         """
+
         def _on(fn):
             self._events[event].append(fn)
             return fn
 
         if fn is None:
-            return _on     # used as a decorator
+            return _on  # used as a decorator
         else:
-            return _on(fn) # used as a normal function
+            return _on(fn)  # used as a normal function
 
     def emit(self, event, *args, **kwargs):
         """Trigger an event."""
@@ -83,4 +93,9 @@ class EventEmitter(object):
 
 
 from isca.experiment import Experiment, DiagTable, Namelist, FailedRunError
-from isca.codebase import IscaCodeBase, SocratesCodeBase, DryCodeBase, GreyCodeBase #, ShallowCodeBase
+from isca.codebase import (
+    IscaCodeBase,
+    SocratesCodeBase,
+    DryCodeBase,
+    GreyCodeBase,
+)  # , ShallowCodeBase
